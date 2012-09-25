@@ -92,15 +92,12 @@ private slots:
     void on_download_readyRead();
     void on_download_finished();
     void on_download_progress(qint64 bytesReceived, qint64 bytesTotal);
-    void on_download_error(QNetworkReply::NetworkError e);
     
     void on_vf_readyRead();
     void on_vf_downloaded();
 
-    void printInfo(QString info);
-    void printError(QString e);
-    void printError(quint32 n, QString e);
-
+    void showMessage(QString msg);
+    void showError(QString e);
 };
 
 #endif // WIDGET_H

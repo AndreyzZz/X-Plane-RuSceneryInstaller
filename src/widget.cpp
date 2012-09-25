@@ -10,9 +10,11 @@
 Widget::Widget(QWidget *parent) : QWidget(parent)
 {
     ui.setupUi(this);
+    setWindowIcon(QIcon(":/Resources/Icons/icon"));
     setWindowTitle("RuScenery Installer " + QApplication::applicationVersion());
 
     setInstalling(false);
+    showMessage(QString::null);
 
     xplaneDir = prepareUrl(settings.value("DIR", defaultInstallDir()).toString());
     url = prepareUrl(settings.value("URL", defaultRuSceneryUrl()).toString());
@@ -26,22 +28,17 @@ Widget::~Widget()
     settings.setValue("URL", url);
 }
 
-//------------------ Print messages ---------------------
-void Widget::printInfo(QString info)
+void Widget::showError(QString e)
 {
-    qDebug() << QDateTime::currentDateTime().toString("hh:mm:ss") + ": " + info;
+    qDebug() << QDateTime::currentDateTime() << tr("Error") << e;
+    QMessageBox::critical(this, tr("Error"), e);
 }
 
-void Widget::printError(QString e)
+void Widget::showMessage(QString msg)
 {
-    qDebug() << QDateTime::currentDateTime().toString("hh:mm:ss") + ": " + tr("Error") + " " + e;
+    ui.label_Info->setVisible(!msg.isNull() && msg != "");
+    ui.label_Info->setText(msg);
 }
-
-void Widget::printError(quint32 n, QString e)
-{
-    qDebug() << QDateTime::currentDateTime().toString("hh:mm:ss") + ": " + tr("Error") + " " + QString::number(n) + ": " + e;
-}
-
 
 QString Widget::prepareUrl(QString url)
 {
@@ -54,12 +51,12 @@ void Widget::setInstalling(bool state)
 {
     isInstalling = state;
 
-    ui.progressBar->setEnabled(state);
-    ui.progressBar_2->setEnabled(state);
+    ui.progressBar_Current->setEnabled(state);
+    ui.progressBar_Overall->setEnabled(state);
     ui.label_Download->setEnabled(state);
 
-    ui.progressBar->setVisible(state);
-    ui.progressBar_2->setVisible(state);
+    ui.progressBar_Current->setVisible(state);
+    ui.progressBar_Overall->setVisible(state);
     ui.label_Download->setVisible(state);
 
     ui.lineEdit->setEnabled(!state);
@@ -109,8 +106,7 @@ void Widget::start_install()
 {
     setInstalling(true);
 
-    printInfo(tr("Installation started"));
-    printInfo(tr("Downloading RuScenery version file"));
+    qDebug() << QDateTime::currentDateTime() << tr("Installation started");
 
     downloadProgress = 0;
     downloadSize = 0;
@@ -127,8 +123,8 @@ void Widget::start_install()
     file = 0;
     iFileList.clear();
 
-    ui.progressBar->setValue(0);
-    ui.progressBar_2->setValue(0);
+    ui.progressBar_Current->setValue(0);
+    ui.progressBar_Overall->setValue(0);
 
     ui.label_Download->setText(tr("Downloading %1").arg(ruSceneryVersionFileName()));
 
@@ -137,7 +133,6 @@ void Widget::start_install()
     connect(networkReply, SIGNAL(readyRead()), this, SLOT(on_vf_readyRead()));
     connect(networkReply, SIGNAL(finished()), this, SLOT(on_vf_downloaded()));
     connect(networkReply, SIGNAL(downloadProgress(qint64,qint64)), this, SLOT(on_download_progress(qint64,qint64)));
-    connect(networkReply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(on_download_error(QNetworkReply::NetworkError)));
 }
 
 void Widget::abort_install()
@@ -162,6 +157,7 @@ void Widget::abort_install()
     }
 
     setInstalling(false);
+    showMessage(QString::null);
 }
 
 
@@ -171,7 +167,8 @@ void Widget::on_vf_readyRead()
 {
     if (networkReply->bytesAvailable() > maxVersionFileSize || downloadedBytes > maxVersionFileSize)
     {
-        printError(tr("Unable to download version file. File too big."));
+        showError(tr("Unable to download version file. File too big."));
+
         abort_install();
         return;
     }
@@ -181,7 +178,7 @@ void Widget::on_vf_readyRead()
         QByteArray array = networkReply->readLine();
         downloadedBytes += array.size();
         
-        QString line = QTextCodec::codecForName("Windows-1251")->toUnicode(array).simplified();//  QString::fromAscii(array.data(), array.size()).simplified();
+        QString line = QTextCodec::codecForName("Windows-1251")->toUnicode(array).simplified();
         QStringList list = line.split(' ');
         
         if (list.size() > 0 && list.at(0) != "#")
@@ -192,7 +189,7 @@ void Widget::on_vf_readyRead()
             else if (cmd == ";d" && list.size() == 2) uurl = prepareUrl(list.at(1));
             else if (cmd == ";v" && list.size() == 2) version = list.at(1);
             else if (cmd == ";s") msg = line.right(line.size() - cmd.size());
-            else if (cmd == ";t") msgTop = line.right(line.size() - cmd.size());
+            else if (cmd == ";t") { msgTop = line.right(line.size() - cmd.size()); showMessage(msgTop); }
             else if (cmd == ";b") msgBottom = line.right(line.size() - cmd.size());
             else if (list.size() >= 4)
             {
@@ -213,7 +210,8 @@ void Widget::on_vf_downloaded()
 {
     if (networkReply->error())
     {
-        printError(networkReply->error(), networkReply->errorString());
+        showError(networkReply->errorString());
+
         abort_install();
         return;
     }
@@ -244,14 +242,12 @@ void Widget::on_vf_downloaded()
 
         if (ret == QMessageBox::Yes)
         {
-            if (msgTop != "") printInfo(msgTop);
             start_download();
         }
         else abort_install();
     }
     else
     {
-        printInfo(tr("Nothing to download"));
         abort_install();
     }
 }
@@ -261,9 +257,10 @@ void Widget::on_vf_downloaded()
 //---------------------- Download Library Files ------------------------------
 void Widget::start_download()
 {
-    if (msg != "") printInfo(msg);
+    showMessage(msg);
 
-    printInfo(tr("Downloading") + " " + iFileList.first().fileName);
+    QString size = QString::number((qreal)iFileList.first().fileSize/(1024*1024),'f', 2);
+    ui.label_Download->setText(tr("Downloading %1 - %2 MiB").arg(iFileList.first().fileName).arg(size));
 
     file = new QFile(rusceneryDir + iFileList.first().fileName);
 
@@ -271,15 +268,13 @@ void Widget::start_download()
         !QDir().mkpath(QFileInfo(file->fileName()).path()) ||
         !file->open(QIODevice::WriteOnly))
     {
-        printError(file->error(), file->errorString());
+        showError(file->errorString());
+
         abort_install();
         return;
     }
 
     downloadedBytes = 0;
-
-    QString size = QString::number((qreal)iFileList.first().fileSize/(1024*1024),'f', 2);
-    ui.label_Download->setText(tr("Downloading %1 - %2 MiB").arg(iFileList.first().fileName).arg(size));
 
     networkReply = networkAccessManager.get(QNetworkRequest(QUrl(uurl + iFileList.first().fileName, QUrl::TolerantMode)));
 
@@ -295,7 +290,7 @@ void Widget::on_download_readyRead()
 
     if (bytes != file->write(networkReply->readAll()))
     {
-        printError(file->error(), file->errorString());
+        showError(file->errorString());
         abort_install();
     }
     else
@@ -303,7 +298,7 @@ void Widget::on_download_readyRead()
         downloadedBytes += bytes;
         if (downloadedBytes > maxDownloadFileSize)
         {
-            printError(file->error(), file->errorString());
+            showError(file->errorString());
             abort_install();
         }
     }
@@ -313,14 +308,14 @@ void Widget::on_download_finished()
 {
     if (networkReply->error())
     {
-        printError(networkReply->error(), networkReply->errorString());
+        showError(networkReply->errorString());
 
         abort_install();
         return;
     }
     else if (file->size() != iFileList.first().fileSize)
     {
-        printError(networkReply->error(), networkReply->errorString());
+        showError(networkReply->errorString());
 
         abort_install();
         return;
@@ -334,7 +329,7 @@ void Widget::on_download_finished()
     file = 0;
 
     downloadProgress += (qreal)downloadedBytes/downloadSize*100;
-    ui.progressBar->setValue(qCeil(downloadProgress));
+    ui.progressBar_Overall->setValue(qCeil(downloadProgress));
 
     iFileList.removeFirst();
 
@@ -344,8 +339,10 @@ void Widget::on_download_finished()
     }
     else
     {
-        if (msgBottom != "") printInfo(msgBottom);
-        printInfo(tr("All files downloaded"));
+        showMessage(msgBottom);
+
+        qDebug() << QDateTime::currentDateTime() << tr("All files downloaded");
+
         abort_install();
 
         if (version != "" && version != QApplication::applicationVersion())
@@ -365,19 +362,8 @@ void Widget::on_download_finished()
 
 void Widget::on_download_progress(qint64 bytesReceived, qint64 bytesTotal)
 {
-    if (bytesTotal == -1 && iFileList.size() > 0)
-    {
-        qDebug()<< bytesReceived << bytesTotal << iFileList.first().fileSize;
-        bytesTotal = iFileList.first().fileSize;
-    }
-    else qDebug() << bytesReceived << bytesTotal;
-    if (bytesTotal > 0)
-        ui.progressBar_2->setValue(qCeil(bytesReceived*100.0/bytesTotal));
+    if (bytesTotal == -1 && iFileList.size() > 0) bytesTotal = iFileList.first().fileSize;
 
-
-}
-
-void Widget::on_download_error(QNetworkReply::NetworkError e)
-{
-    qDebug() << e;
+    if (bytesTotal == 0) ui.progressBar_Current->setValue(0);
+    else ui.progressBar_Current->setValue(qCeil(bytesReceived*100.0/bytesTotal));
 }

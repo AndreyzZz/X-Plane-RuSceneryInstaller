@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>139</height>
+    <width>416</width>
+    <height>158</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -31,16 +31,12 @@
   <property name="windowTitle">
    <string>RuScenery Installer</string>
   </property>
-  <property name="windowIcon">
-   <iconset>
-    <normaloff>widget.ico</normaloff>widget.ico</iconset>
-  </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <property name="spacing">
     <number>4</number>
    </property>
    <property name="sizeConstraint">
-    <enum>QLayout::SetDefaultConstraint</enum>
+    <enum>QLayout::SetMinAndMaxSize</enum>
    </property>
    <property name="margin">
     <number>8</number>
@@ -52,6 +48,12 @@
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>400</width>
+       <height>0</height>
+      </size>
      </property>
      <property name="text">
       <string>X-Plane folder:</string>
@@ -69,7 +71,7 @@
      <item>
       <widget class="QLineEdit" name="lineEdit">
        <property name="readOnly">
-        <bool>true</bool>
+        <bool>false</bool>
        </property>
       </widget>
      </item>
@@ -114,7 +116,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QProgressBar" name="progressBar_2">
+    <widget class="QProgressBar" name="progressBar_Current">
      <property name="value">
       <number>0</number>
      </property>
@@ -125,8 +127,11 @@
    </item>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <property name="spacing">
+      <number>4</number>
+     </property>
      <item>
-      <widget class="QProgressBar" name="progressBar">
+      <widget class="QProgressBar" name="progressBar_Overall">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
          <horstretch>0</horstretch>
@@ -158,6 +163,22 @@
       </widget>
      </item>
     </layout>
+   </item>
+   <item>
+    <widget class="QLabel" name="label_Info">
+     <property name="frameShape">
+      <enum>QFrame::NoFrame</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Plain</enum>
+     </property>
+     <property name="text">
+      <string>Welcome to RuScenery Installer</string>
+     </property>
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+    </widget>
    </item>
   </layout>
  </widget>

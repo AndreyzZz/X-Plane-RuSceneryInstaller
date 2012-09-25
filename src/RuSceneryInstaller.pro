@@ -4,9 +4,12 @@
 #
 #-------------------------------------------------
 
+CODECFORTR      = UTF-8
+CODECFORSRC     = UTF-8
+
 QT       += core gui network
 
-TARGET = RuScenery_Installer
+TARGET = RuSceneryInstaller
 TEMPLATE = app
 
 SOURCES += main.cpp\
@@ -17,3 +20,8 @@ HEADERS  += widget.h
 FORMS    += widget.ui
 
 RC_FILE = RuSceneryInstaller.rc
+
+TRANSLATIONS    = RuSceneryInstaller_ru.ts
+
+RESOURCES += \
+    RuSceneryInstaller.qrc

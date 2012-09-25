@@ -12,6 +12,10 @@ int main(int argc, char *argv[])
     a.setApplicationName("RuSceneryInstaller");
     a.setApplicationVersion("0.1.0");
 
+    QTranslator t;
+    t.load("ru", ":/Resources/Translations");
+    a.installTranslator(&t);
+
     Widget w;
     w.show();
 

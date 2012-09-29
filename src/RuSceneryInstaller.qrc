@@ -3,6 +3,6 @@
         <file alias="icon">RuSceneryInstaller.ico</file>
     </qresource>
     <qresource prefix="/Resources/Translations">
-        <file alias="ru">RuSceneryInstaller_ru.qm</file>
+        <file alias="Russian">RuSceneryInstaller_ru.qm</file>
     </qresource>
 </RCC>

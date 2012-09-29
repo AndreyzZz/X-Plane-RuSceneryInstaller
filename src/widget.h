@@ -35,7 +35,7 @@ public:
     static const QString xplaneFileName() { return "X-Plane"; }
 #elif defined(Q_OS_WIN32)
     static const QString defaultDir() { return QDir::rootPath(); }
-    static const QString defaultInstallDir() { return defaultDir() + "/X-Plane"; }
+    static const QString defaultInstallDir() { return defaultDir() + "X-Plane"; }
     static const QString xplaneFileName() { return "X-Plane.exe"; }
 #endif
     
@@ -72,6 +72,7 @@ private:
     quint32 downloadedBytes;
 
     bool isInstalling;
+    bool abortedByUser;
     
     QFile *file;
     QList<FileDescription> iFileList;
@@ -86,7 +87,7 @@ private slots:
     void setInstalling(bool state);
 
     void start_install();
-    void abort_install();
+    void abort_install(bool user = false);
 
     void start_download();
     void on_download_readyRead();

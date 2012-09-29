@@ -11,17 +11,14 @@ QT       += core gui network
 
 TARGET = RuSceneryInstaller
 TEMPLATE = app
+TRANSLATIONS = RuSceneryInstaller_ru.ts
 
 SOURCES += main.cpp\
         widget.cpp
-
 HEADERS  += widget.h
-
 FORMS    += widget.ui
 
-RC_FILE = RuSceneryInstaller.rc
+win32:RC_FILE = RuSceneryInstaller.rc
+macx:ICON = RuSceneryInstaller.icns
 
-TRANSLATIONS    = RuSceneryInstaller_ru.ts
-
-RESOURCES += \
-    RuSceneryInstaller.qrc
+RESOURCES += RuSceneryInstaller.qrc

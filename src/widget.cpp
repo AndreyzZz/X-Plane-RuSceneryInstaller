@@ -10,7 +10,6 @@
 Widget::Widget(QWidget *parent) : QWidget(parent)
 {
     ui.setupUi(this);
-    setWindowIcon(QIcon(":/Resources/Icons/icon"));
     setWindowTitle("RuScenery Installer " + QApplication::applicationVersion());
 
     setInstalling(false);
@@ -24,8 +23,21 @@ Widget::Widget(QWidget *parent) : QWidget(parent)
 
 Widget::~Widget()
 {
-    settings.setValue("DIR", xplaneDir);
-    settings.setValue("URL", url);
+    if (isInstalling)
+    {
+        abort_install(true);
+
+        while (isInstalling)
+        {
+            QApplication::processEvents();
+        }
+    }
+
+    if (ui.pushButton_Install->isEnabled())
+    {
+        settings.setValue("DIR", xplaneDir);
+        settings.setValue("URL", url);
+    }
 }
 
 void Widget::showError(QString e)
@@ -111,6 +123,7 @@ void Widget::start_install()
     downloadProgress = 0;
     downloadSize = 0;
     downloadedBytes = 0;
+    abortedByUser = false;
 
     msg = "";
     msgTop = "";
@@ -135,8 +148,10 @@ void Widget::start_install()
     connect(networkReply, SIGNAL(downloadProgress(qint64,qint64)), this, SLOT(on_download_progress(qint64,qint64)));
 }
 
-void Widget::abort_install()
+void Widget::abort_install(bool user)
 {
+    if (user) abortedByUser = true;
+
     if (networkReply && !networkReply->isFinished())
     {
         networkReply->abort();
@@ -210,14 +225,18 @@ void Widget::on_vf_downloaded()
 {
     if (networkReply->error())
     {
-        showError(networkReply->errorString());
+        if (!abortedByUser)
+            showError(networkReply->errorString());
 
         abort_install();
         return;
     }
 
-    networkReply->deleteLater();
-    networkReply = 0;
+    if (networkReply)
+    {
+        networkReply->deleteLater();
+        networkReply = 0;
+    }
 
     for (int i = iFileList.size() - 1; i >= 0; --i)
     {
@@ -308,7 +327,8 @@ void Widget::on_download_finished()
 {
     if (networkReply->error())
     {
-        showError(networkReply->errorString());
+        if (!abortedByUser)
+            showError(networkReply->errorString());
 
         abort_install();
         return;

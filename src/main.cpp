@@ -11,10 +11,10 @@ int main(int argc, char *argv[])
 	a.setOrganizationName("RuScenery");
     a.setApplicationName("RuSceneryInstaller");
     a.setApplicationVersion("0.1.0");
+    a.setWindowIcon(QIcon(":/Resources/Icons/icon"));
 
     QTranslator t;
-    t.load("ru", ":/Resources/Translations");
-    a.installTranslator(&t);
+    if (t.load(QLocale::languageToString(QLocale::system().language()), ":/Resources/Translations")) a.installTranslator(&t);
 
     Widget w;
     w.show();

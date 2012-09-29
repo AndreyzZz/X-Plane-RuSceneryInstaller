@@ -22,3 +22,7 @@ win32:RC_FILE = RuSceneryInstaller.rc
 macx:ICON = RuSceneryInstaller.icns
 
 RESOURCES += RuSceneryInstaller.qrc
+
+OTHER_FILES += \
+    RuSceneryInstaller.rc \
+    RuSceneryInstaller.ico

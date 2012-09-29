@@ -28,20 +28,21 @@ public:
 #if defined(Q_OS_MAC)
     static const QString defaultDir() { return QDir::homePath(); }
     static const QString defaultInstallDir() { return defaultDir() + "/X-Plane.app"; }
-    static const QString xplaneFileName() { return "MacOS/X-Plane"; }
+    static const QString xplaneFileName() { return "Contents/MacOS/X-Plane"; }
+    static const QString customSceneryDirName() { return "Contents/Custom Scenery"; }
 #elif defined(Q_OS_LINUX)
     static const QString defaultDir() { return QDir::homePath(); }
     static const QString defaultInstallDir() { return defaultDir() + "/X-Plane"; }
     static const QString xplaneFileName() { return "X-Plane"; }
+    static const QString customSceneryDirName() { return "Custom Scenery"; }
 #elif defined(Q_OS_WIN32)
     static const QString defaultDir() { return QDir::rootPath(); }
     static const QString defaultInstallDir() { return defaultDir() + "X-Plane"; }
     static const QString xplaneFileName() { return "X-Plane.exe"; }
-#endif
-    
     static const QString customSceneryDirName() { return "Custom Scenery"; }
-    static const QString ruSceneryDirName() { return "ruscenery"; }
+#endif
 
+    static const QString ruSceneryDirName() { return "ruscenery"; }
     static const QString defaultRuSceneryUrl() { return "http://www.x-plane.su/ruscenery/"; }
     static const QString defaultRuSceneryUpdateUrl() { return "http://www.x-plane.su/ruscenery/update/"; }
     static const QString ruSceneryVersionFileName() { return "ruscenery.ver"; }

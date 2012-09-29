@@ -3,7 +3,6 @@
 
 #include <QFile>
 #include <QSettings>
-#include <QStringList>
 #include <QDateTime>
 #include <QtNetwork>
 #include <QNetworkAccessManager>
@@ -16,6 +15,8 @@ struct FileDescription
     QDateTime dateTime;
     quint32 fileSize;
 };
+
+enum iStatus { NotStarted, Installing, AbortByUser, AbortByApplication, AbortWithError, Finished};
 
 class Widget : public QWidget
 {
@@ -47,8 +48,8 @@ public:
     static const QString defaultRuSceneryUpdateUrl() { return "http://www.x-plane.su/ruscenery/update/"; }
     static const QString ruSceneryVersionFileName() { return "ruscenery.ver"; }
 
-    static const quint32 maxVersionFileSize = 1048576;
-    static const quint32 maxDownloadFileSize = 104857600;
+    static const quint32 maxVersionFileSize = 3*1024*1024;
+    static const quint32 maxDownloadFileSize = 100*1024*1024;
     
 private:
     Ui::Widget ui;
@@ -68,12 +69,15 @@ private:
     QString msgTop;
     QString msgBottom;
 
-    qreal downloadProgress;
-    quint32 downloadSize;
-    quint32 downloadedBytes;
+    QString currentDownloadFileName;
+    quint32 currentDownloadSize;
+    quint32 currentDownloadedBytes;
+    quint64 overallDownloadSize;
+    quint64 overallDownloadedBytes;
 
     bool isInstalling;
-    bool abortedByUser;
+
+    iStatus status;
     
     QFile *file;
     QList<FileDescription> iFileList;
@@ -88,7 +92,7 @@ private slots:
     void setInstalling(bool state);
 
     void start_install();
-    void abort_install(bool user = false);
+    void abort_install(iStatus s, QString e = "");
 
     void start_download();
     void on_download_readyRead();
@@ -97,6 +101,8 @@ private slots:
     
     void on_vf_readyRead();
     void on_vf_downloaded();
+
+    void setUpdate(QString url);
 
     void showMessage(QString msg);
     void showError(QString e);

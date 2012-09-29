@@ -113,8 +113,7 @@ void Widget::on_lineEdit_textChanged(QString text)
 
     qDebug() << QDateTime::currentDateTime() << "Selecting directories" << xplaneDir << rusceneryDir;
 
-    if (QFile::exists(xplaneDir + xplaneFileName()) &&
-        QDir(xplaneDir + customSceneryDirName()).exists())
+    if (QFile::exists(xplaneDir + xplaneFileName()) && QDir(xplaneDir + customSceneryDirName()).exists())
     {
         ui.pushButton_Install->setEnabled(true);
     }

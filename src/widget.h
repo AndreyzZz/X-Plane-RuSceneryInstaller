@@ -9,7 +9,9 @@
 
 #include "ui_widget.h"
 
-//#define CheckExecutableFileExists
+#define SPEED_ESTIMATION_TIME 10
+#define MEGABYTE 1048576.0
+#define KILOBYTE 1024.0
 
 struct FileDescription
 {
@@ -18,7 +20,7 @@ struct FileDescription
     quint32 fileSize;
 };
 
-enum iStatus { NotStarted, Installing, AbortByUser, AbortByApplication, AbortWithError, Finished};
+enum iStatus { NotStarted, Installing, AbortByUser, AbortByApplication, AbortWithError, Finished };
 
 class Widget : public QWidget
 {
@@ -52,11 +54,10 @@ private:
 
     QSettings settings;
     QNetworkReply *networkReply;
-    QNetworkAccessManager networkAccessManager;    
+    QNetworkAccessManager networkAccessManager;
 
     QString xplaneDir;
     QString rusceneryDir;
-    QString xFileName;
 
     QString url;
     QString uurl;
@@ -65,32 +66,39 @@ private:
     QString msgTop;
     QString msgBottom;
 
-    QString currentDownloadFileName;
+    quint64 overallDownloadedBytesOnTimer;
+    quint32 currentDownloadSpeed;
     quint32 currentDownloadSize;
     quint32 currentDownloadedBytes;
     quint64 overallDownloadSize;
     quint64 overallDownloadedBytes;
-
-    bool isInstalling;
 
     iStatus status;
     
     QFile *file;
     QList<FileDescription> iFileList;
 
+    QTimer *timer;
+    quint32 timerCounter;
+
+
     QString prepareUrl(QString url);
+    void setInstalling(bool state = false);
+
+    void start_install();
+    void start_download();
+    void abort_install(iStatus s, QString e = "");
+
+    void setUpdate(QString url = "");
+
+    void showMessage(QString msg);
+    void showError(QString e);
 
 private slots:
-	void on_pushButton_Select_clicked();
+    void on_toolButton_Select_clicked();
     void on_pushButton_Install_clicked();
 	void on_lineEdit_textChanged(QString text);
 
-    void setInstalling(bool state);
-
-    void start_install();
-    void abort_install(iStatus s, QString e = "");
-
-    void start_download();
     void on_download_readyRead();
     void on_download_finished();
     void on_download_progress(qint64 bytesReceived, qint64 bytesTotal);
@@ -98,10 +106,7 @@ private slots:
     void on_vf_readyRead();
     void on_vf_downloaded();
 
-    void setUpdate(QString url);
-
-    void showMessage(QString msg);
-    void showError(QString e);
+    void on_timer_timeout();
 };
 
 #endif // WIDGET_H

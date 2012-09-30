@@ -13,8 +13,8 @@ Widget::Widget(QWidget *parent) : QWidget(parent)
     setWindowTitle("RuScenery Installer " + QApplication::applicationVersion());
 
     setInstalling(false);
-    setUpdate(QString::null);
-    showMessage(QString::null);
+    setUpdate("");
+    showMessage("");
 
     xplaneDir = prepareUrl(settings.value("DIR", defaultInstallDir()).toString());
     url = prepareUrl(settings.value("URL", defaultRuSceneryUrl()).toString());
@@ -56,14 +56,16 @@ void Widget::setInstalling(bool state)
 
     ui.progressBar_Current->setEnabled(state);
     ui.progressBar_Overall->setEnabled(state);
+    ui.label_ETA->setEnabled(state);
 //    ui.label_Download->setEnabled(state);
 
     ui.progressBar_Current->setVisible(state);
     ui.progressBar_Overall->setVisible(state);
+    ui.label_ETA->setVisible(state);
 //    ui.label_Download->setVisible(state);
 
     ui.lineEdit->setEnabled(!state);
-    ui.pushButton_Select->setEnabled(!state);
+    ui.toolButton_Select->setEnabled(!state);
 
     ui.pushButton_Install->setEnabled(true);
     ui.pushButton_Install->setText(state ? tr("Abort"):tr("Install"));
@@ -71,27 +73,24 @@ void Widget::setInstalling(bool state)
 
 void Widget::setUpdate(QString url)
 {
-    bool available = false;
-
-    if (!url.isNull() && url !="")
+    if (!url.isEmpty())
     {
-        available = true;
         ui.label_Update->setText(tr("New Installer available") + QString(" %1 <a href=\"%2\">%2</a>").arg(version).arg(url));
     }
 
-    ui.label_Update->setEnabled(available);
-    ui.label_Update->setVisible(available);
+    ui.label_Update->setEnabled(!url.isEmpty());
+    ui.label_Update->setVisible(!url.isEmpty());
 }
 
 
 //------------------ Button click handlers ---------------------
 
-void Widget::on_pushButton_Select_clicked()
+void Widget::on_toolButton_Select_clicked()
 {
     QString xdir = QFileDialog::getExistingDirectory(this, tr("Select X-Plane directory"), defaultDir(),
 					QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
 
-    if (!xdir.isNull()) ui.lineEdit->setText(xdir);
+    if (!xdir.isEmpty()) ui.lineEdit->setText(xdir);
 }
 
 void Widget::on_pushButton_Install_clicked()
@@ -129,26 +128,29 @@ void Widget::start_install()
 
     qDebug() << QDateTime::currentDateTime() << tr("Installation started");
 
+    overallDownloadedBytesOnTimer = 0;
+    currentDownloadSpeed = 0;
     currentDownloadSize = 0;
     currentDownloadedBytes = 0;
     overallDownloadSize = 0;
     overallDownloadedBytes = 0;
-    currentDownloadFileName = ruSceneryVersionFileName();
 
     msg = "";
     msgTop = "";
     msgBottom = "";
-
-    version = "";
-
+    version = QApplication::applicationVersion();
     uurl = defaultRuSceneryUpdateUrl();
-
-    file = 0;
-    iFileList.clear();
 
     ui.progressBar_Current->setValue(0);
     ui.progressBar_Overall->setValue(0);
     ui.label_Download->setText(tr("Downloading %1").arg(ruSceneryVersionFileName()));
+
+    timerCounter = 0;
+    timer = new QTimer(this);
+    timer->start(1000);
+
+    file = 0;
+    iFileList.clear();
 
     networkReply = networkAccessManager.get(QNetworkRequest(QUrl(url + ruSceneryVersionFileName(), QUrl::TolerantMode)));
     qDebug() << QDateTime::currentDateTime() << "Starting networkRequest" << networkReply->request().url();
@@ -156,6 +158,8 @@ void Widget::start_install()
     connect(networkReply, SIGNAL(readyRead()), this, SLOT(on_vf_readyRead()));
     connect(networkReply, SIGNAL(finished()), this, SLOT(on_vf_downloaded()));
     connect(networkReply, SIGNAL(downloadProgress(qint64,qint64)), this, SLOT(on_download_progress(qint64,qint64)));
+
+    connect(timer, SIGNAL(timeout()), this, SLOT(on_timer_timeout()));
 }
 
 void Widget::abort_install(iStatus s, QString e)
@@ -175,6 +179,14 @@ void Widget::abort_install(iStatus s, QString e)
     else if (s == AbortByUser) ui.label_Download->setText(tr("Aborted by user"));
     else if (s == Finished) ui.label_Download->setText(tr("Installation finished"));
 
+
+    if (timer && timer->isActive())
+    {
+        qDebug() << QDateTime::currentDateTime() << "Stopping estimation timer";
+        timer->stop();
+        delete timer;
+        timer = 0;
+    }
 
     if (networkReply && !networkReply->isFinished())
     {
@@ -276,6 +288,8 @@ void Widget::on_vf_downloaded()
     ui.progressBar_Overall->setValue(qCeil(overallDownloadedBytes*100.0/overallDownloadSize));
     qDebug() << QDateTime::currentDateTime() << "Calculating download size" << overallDownloadedBytes << overallDownloadSize;
 
+    overallDownloadedBytesOnTimer = overallDownloadedBytes;
+
     if (iFileList.size() > 0)
     {
         QString size = QString::number((qreal)(overallDownloadSize - overallDownloadedBytes)/(1024*1024), 'f', 2);
@@ -297,8 +311,7 @@ void Widget::start_download()
 {
     showMessage(msg);
 
-    QString size = QString::number((qreal)iFileList.first().fileSize/(1024*1024),'f', 2);
-    ui.label_Download->setText(tr("Downloading %1 - %2 MiB").arg(iFileList.first().fileName).arg(size));
+    ui.label_Download->setText(tr("Downloading %1").arg(iFileList.first().fileName));
 
     file = new QFile(rusceneryDir + iFileList.first().fileName);
 
@@ -310,7 +323,6 @@ void Widget::start_download()
         return;
     }
 
-    currentDownloadFileName = iFileList.first().fileName;
     currentDownloadSize = iFileList.first().fileSize;
     currentDownloadedBytes = 0;
     ui.progressBar_Current->setValue(0);
@@ -389,11 +401,35 @@ void Widget::on_download_progress(qint64 bytesReceived, qint64 bytesTotal)
                                           .arg(QString::number((qreal)bytesTotal/(1024*1024),'f', 2)) );
     }
 
-    if (overallDownloadSize != 0)
+    if (overallDownloadSize > 0)
     {
         ui.progressBar_Overall->setValue(qCeil(overallDownloadedBytes*100.0/overallDownloadSize));
         ui.progressBar_Overall->setFormat(QString("%1 MiB / %2 MiB - %p%")
                                           .arg(QString::number((qreal)overallDownloadedBytes/(1024*1024),'f', 2))
                                           .arg(QString::number((qreal)overallDownloadSize/(1024*1024),'f', 2)) );
+    }
+}
+
+void Widget::on_timer_timeout()
+{
+    ++timerCounter;
+
+    if (timerCounter >= SPEED_ESTIMATION_TIME)
+    {
+        timerCounter = 0;
+        currentDownloadSpeed = qFloor(((overallDownloadedBytes - overallDownloadedBytesOnTimer))/(SPEED_ESTIMATION_TIME*KILOBYTE));
+        overallDownloadedBytesOnTimer = overallDownloadedBytes;
+    }
+
+    if (currentDownloadSpeed > 0)
+    {
+        QTime ETA;
+        ETA = QTime(0,0,0,0).addSecs(qCeil((overallDownloadSize - overallDownloadedBytes)/(currentDownloadSpeed*KILOBYTE)));
+
+        ui.label_ETA->setText(QString("%1 MiB / %2 MiB - %3 KiBps ETA: %4")
+                              .arg(qFloor(overallDownloadedBytes/MEGABYTE))
+                              .arg(qFloor(overallDownloadSize/MEGABYTE))
+                              .arg(currentDownloadSpeed)
+                              .arg(ETA.toString("hh.mm.ss")));
     }
 }

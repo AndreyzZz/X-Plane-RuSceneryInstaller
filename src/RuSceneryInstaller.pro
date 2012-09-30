@@ -21,6 +21,13 @@ FORMS    += widget.ui
 win32:RC_FILE = RuSceneryInstaller.rc
 macx:ICON = RuSceneryInstaller.icns
 
+unix:!mac{
+  QMAKE_LFLAGS += -Wl,--rpath=\\\$\$ORIGIN
+  QMAKE_LFLAGS += -Wl,--rpath=\\\$\$ORIGIN/lib
+  QMAKE_LFLAGS += -Wl,--rpath=\\\$\$ORIGIN/libs
+  QMAKE_RPATH=
+}
+
 RESOURCES += RuSceneryInstaller.qrc
 
 OTHER_FILES += \

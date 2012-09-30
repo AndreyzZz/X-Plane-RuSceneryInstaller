@@ -52,7 +52,7 @@ public:
 private:
     Ui::Widget ui;
 
-    QSettings settings;
+    QSettings *settings;
     QNetworkReply *networkReply;
     QNetworkAccessManager networkAccessManager;
 

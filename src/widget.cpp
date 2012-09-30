@@ -12,12 +12,19 @@ Widget::Widget(QWidget *parent) : QWidget(parent)
     ui.setupUi(this);
     setWindowTitle("RuScenery Installer " + QApplication::applicationVersion());
 
+    status = NotStarted;
+    timer = 0;
+    file = 0;
+    networkReply = 0;
+
     setInstalling(false);
     setUpdate("");
     showMessage("");
 
-    xplaneDir = prepareUrl(settings.value("DIR", defaultInstallDir()).toString());
-    url = prepareUrl(settings.value("URL", defaultRuSceneryUrl()).toString());
+    settings = new QSettings(QApplication::applicationDirPath() + "/" + QApplication::applicationName() + ".ini", QSettings::IniFormat, this);
+
+    xplaneDir = prepareUrl(settings->value("DIR", defaultInstallDir()).toString());
+    url = prepareUrl(settings->value("URL", defaultRuSceneryUrl()).toString());
 
     ui.lineEdit->setText(xplaneDir);
 }
@@ -28,9 +35,11 @@ Widget::~Widget()
 
     if (ui.pushButton_Install->isEnabled())
     {
-        settings.setValue("DIR", xplaneDir);
-        settings.setValue("URL", url);
+        settings->setValue("DIR", xplaneDir);
+        settings->setValue("URL", url);
     }
+
+    delete settings;
 }
 
 void Widget::showError(QString e)

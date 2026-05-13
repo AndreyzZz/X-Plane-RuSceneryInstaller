@@ -192,4 +192,12 @@ Follow these instructions for all code modifications. The information provided r
 - You need to understand undocumented platform-specific behavior
 - The repository has been significantly modified since these instructions were written
 
-For detailed architecture, see docs/CODEBASE_MAP.md.
+For detailed architecture, see docs/CODEBASE_MAP.md and/or
+see:
+- STACK.md for language, runtime, frameworks, all dependencies
+- STRUCTURE.md for directory layout, entry points, key files
+- ARCHITECTURE.md for layers, patterns, data flow
+- CONVENTIONS.md for naming, formatting, error handling, imports
+- INTEGRATIONS.md for external APIs, databases, auth, monitoring
+- TESTING.md for frameworks, file organization, mocking strategy
+- CONCERNS.md for tech debt, bugs, security risks, perf bottlenecks

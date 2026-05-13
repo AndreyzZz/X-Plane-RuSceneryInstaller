@@ -191,3 +191,5 @@ Follow these instructions for all code modifications. The information provided r
 - A required dependency version is unclear for your specific platform
 - You need to understand undocumented platform-specific behavior
 - The repository has been significantly modified since these instructions were written
+
+For detailed architecture, see docs/CODEBASE_MAP.md.
